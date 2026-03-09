@@ -1,0 +1,35 @@
+{
+  "name": "collage99",
+  "version": "1.0.0",
+  "description": "A lightweight collage maker that runs directly in the browser.",
+  "main": "app.js",
+  "scripts": {
+    "lint": "eslint app.js && stylelint \"**/*.css\" && htmlhint \"**/*.html\"",
+    "lint:js": "eslint app.js",
+    "lint:css": "stylelint \"**/*.css\"",
+    "lint:html": "htmlhint \"**/*.html\"",
+    "test:e2e": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newchet413/collage99.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/newchet413/collage99/issues"
+  },
+  "homepage": "https://github.com/newchet413/collage99#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
+    "htmlhint": "^1.9.2",
+    "http-server": "^14.1.1",
+    "stylelint": "^17.4.0",
+    "stylelint-config-standard": "^40.0.0"
+  }
+}

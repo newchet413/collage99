@@ -1,0 +1,188 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>collage99</title>
+  <link rel="stylesheet" href="styles.css?v=20260309b" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="top-bar">
+      <h1>collage99</h1>
+      <p>Upload images, arrange them, and export your collage.</p>
+      <p id="keyboardHelp" class="assistive-help">
+        Shortcuts: Ctrl/Cmd+Z undo, Ctrl/Cmd+Y redo, Ctrl/Cmd+S save project, Ctrl/Cmd+E export.
+        Mouse: drag image to move, wheel to resize, Shift+drag image to resize.
+        Tile keyboard: arrows move image, Shift+arrows move faster, +/- zoom, Alt+arrow reorders, Delete removes.
+      </p>
+      <p id="statusText" class="sr-only" aria-live="polite"></p>
+    </header>
+
+    <section class="controls" aria-label="Collage controls">
+      <label class="file-picker" for="imagesInput">Add Photos</label>
+      <input id="imagesInput" type="file" accept="image/*" multiple />
+      <label class="file-picker" for="projectInput">Load Project</label>
+      <input id="projectInput" type="file" accept=".json,application/json" />
+
+      <label>
+        Template
+        <select id="templateInput">
+          <option value="custom">Custom</option>
+          <option value="ig-post">Instagram Post</option>
+          <option value="ig-story">Instagram Story</option>
+          <option value="pinterest-pin">Pinterest Pin</option>
+          <option value="facebook-cover">Facebook Cover</option>
+          <option value="sbs-2">Side-by-Side 2 Photos</option>
+          <option value="sbs-4">Side-by-Side 4 Photos</option>
+          <option value="sbs-6">Side-by-Side 6 Photos</option>
+          <option value="sbs-8">Side-by-Side 8 Photos</option>
+          <option value="sbs-text-2">Side-by-Side 2 + Text Space</option>
+          <option value="sbs-text-4">Side-by-Side 4 + Text Space</option>
+          <option value="sbs-text-6">Side-by-Side 6 + Text Space</option>
+          <option value="sbs-text-8">Side-by-Side 8 + Text Space</option>
+        </select>
+      </label>
+
+      <label>
+        Columns
+        <input id="columnsInput" type="range" min="1" max="6" value="3" />
+      </label>
+
+      <label>
+        Gap
+        <input id="gapInput" type="range" min="0" max="40" value="12" />
+      </label>
+
+      <label>
+        Ratio
+        <select id="ratioInput">
+          <option value="1">1:1</option>
+          <option value="0.6667">2:3</option>
+          <option value="0.75">4:3</option>
+          <option value="1.3333">3:4</option>
+          <option value="0.5625">16:9</option>
+          <option value="1.7778">9:16</option>
+          <option value="0.3125">16:5</option>
+        </select>
+      </label>
+
+      <label>
+        Background
+        <input id="bgInput" type="color" value="#ffffff" />
+      </label>
+
+      <label>
+        Padding
+        <input id="paddingInput" type="range" min="0" max="80" value="16" />
+      </label>
+
+      <label>
+        Canvas Preset
+        <select id="canvasPresetInput">
+          <option value="custom">Custom</option>
+          <option value="square">Square (2000x2000)</option>
+          <option value="story">Story (1080x1920)</option>
+          <option value="landscape">Landscape (1920x1080)</option>
+          <option value="portrait">Portrait (1080x1350)</option>
+        </select>
+      </label>
+
+      <label>
+        Canvas Width
+        <input id="canvasWidthInput" type="number" min="600" max="8000" step="10" value="2000" />
+      </label>
+
+      <label>
+        Canvas Height
+        <input id="canvasHeightInput" type="number" min="600" max="8000" step="10" value="2000" />
+      </label>
+
+      <label>
+        Preview Zoom
+        <input id="previewZoomInput" type="range" min="50" max="180" value="100" />
+      </label>
+
+      <label>
+        Export Format
+        <select id="exportFormatInput">
+          <option value="png">PNG</option>
+          <option value="jpeg">JPEG</option>
+        </select>
+      </label>
+
+      <label>
+        JPEG Quality
+        <input id="exportQualityInput" type="range" min="60" max="100" value="92" />
+      </label>
+      <button id="undoBtn" type="button" aria-keyshortcuts="Control+Z Meta+Z">Undo</button>
+      <button id="redoBtn" type="button" aria-keyshortcuts="Control+Y Meta+Y">Redo</button>
+      <button id="saveProjectBtn" type="button">Save Project</button>
+      <button id="shuffleBtn" type="button">Shuffle</button>
+      <button id="clearBtn" type="button">Clear</button>
+      <button id="exportBtn" type="button">Export</button>
+    </section>
+
+    <section class="text-controls" aria-label="Text controls">
+      <label class="text-content">
+        Text
+        <textarea id="textInput" rows="4">Your text</textarea>
+      </label>
+
+      <label>
+        Text Size
+        <input id="textSizeInput" type="range" min="16" max="180" value="56" />
+      </label>
+
+      <label>
+        Text Color
+        <input id="textColorInput" type="color" value="#111111" />
+      </label>
+
+      <label>
+        Text Align
+        <select id="textAlignInput">
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </label>
+
+      <label>
+        Drop Shadow
+        <input id="textShadowInput" type="checkbox" checked />
+      </label>
+
+      <label>
+        Text Space
+        <input id="textZoneEnabledInput" type="checkbox" />
+      </label>
+
+      <label>
+        Space Position
+        <select id="textZonePositionInput">
+          <option value="right">Right</option>
+          <option value="left">Left</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+        </select>
+      </label>
+
+      <label>
+        Space Size
+        <input id="textZoneSizeInput" type="range" min="15" max="50" value="30" />
+      </label>
+
+      <button id="addTextBtn" type="button">Add Text</button>
+      <button id="deleteTextBtn" type="button">Delete Text</button>
+    </section>
+
+    <section class="canvas-wrap">
+      <p class="canvas-meta">Canvas: <span id="canvasSizeReadout">2000 x 2000</span></p>
+      <div id="collageCanvas" class="collage-canvas" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="app.js?v=20260309b"></script>
+</body>
+</html>
