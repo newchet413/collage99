@@ -62,6 +62,8 @@ const state = {
   previewZoom: 100,
   exportFormat: "png",
   exportQuality: 92,
+  autoFillTemplate: false,
+  snapToSlots: false,
   textZone: {
     enabled: false,
     position: "right",
@@ -105,6 +107,8 @@ const nodes = {
   previewZoom: document.getElementById("previewZoomInput"),
   exportFormat: document.getElementById("exportFormatInput"),
   exportQuality: document.getElementById("exportQualityInput"),
+  autoFill: document.getElementById("autoFillInput"),
+  snapSlots: document.getElementById("snapSlotsInput"),
   textInput: document.getElementById("textInput"),
   textSize: document.getElementById("textSizeInput"),
   textColor: document.getElementById("textColorInput"),
@@ -148,6 +152,8 @@ function captureState() {
     previewZoom: state.previewZoom,
     exportFormat: state.exportFormat,
     exportQuality: state.exportQuality,
+    autoFillTemplate: state.autoFillTemplate,
+    snapToSlots: state.snapToSlots,
     textZone: state.textZone,
     template: state.template,
     textOverlays: state.textOverlays,
@@ -168,6 +174,8 @@ function applyCapturedState(snapshot) {
   state.previewZoom = clamp(Number(snapshot.previewZoom) || 100, 50, 180);
   state.exportFormat = snapshot.exportFormat === "jpeg" ? "jpeg" : "png";
   state.exportQuality = clamp(Number(snapshot.exportQuality) || 92, 60, 100);
+  state.autoFillTemplate = !!snapshot.autoFillTemplate;
+  state.snapToSlots = !!snapshot.snapToSlots;
   state.textZone = {
     enabled: !!snapshot.textZone?.enabled,
     position: ["right", "left", "top", "bottom"].includes(snapshot.textZone?.position)
@@ -277,6 +285,9 @@ function syncControls() {
   nodes.previewZoom.value = String(state.previewZoom);
   nodes.exportFormat.value = state.exportFormat;
   nodes.exportQuality.value = String(state.exportQuality);
+  nodes.autoFill.checked = state.autoFillTemplate;
+  nodes.snapSlots.checked = state.snapToSlots;
+  nodes.snapSlots.disabled = state.autoFillTemplate;
   nodes.textZoneEnabled.checked = state.textZone.enabled;
   nodes.textZonePosition.value = state.textZone.position;
   nodes.textZoneSize.value = String(state.textZone.sizePercent);
@@ -309,6 +320,17 @@ function setTileImageStyles(img, item) {
   img.style.setProperty("--x", `${item.x}px`);
   img.style.setProperty("--y", `${item.y}px`);
   img.style.setProperty("--scale", `${item.scale}`);
+}
+
+function getEffectiveImageTransform(item) {
+  if (state.autoFillTemplate) {
+    return { x: 0, y: 0, scale: 1 };
+  }
+  return { x: item.x, y: item.y, scale: item.scale };
+}
+
+function snapValueToGrid(value, grid = 20) {
+  return Math.round(value / grid) * grid;
 }
 
 function setOverlayStyles(element, overlay) {
@@ -375,12 +397,19 @@ function getCanvasLayout(width, height, basePadding, zoneConfig) {
 }
 
 function nudgeTile(index, dx, dy) {
+  if (state.autoFillTemplate) {
+    return;
+  }
   const item = state.items[index];
   if (!item) {
     return;
   }
   item.x += dx;
   item.y += dy;
+  if (state.snapToSlots) {
+    item.x = snapValueToGrid(item.x);
+    item.y = snapValueToGrid(item.y);
+  }
   scheduleRender();
 }
 
@@ -395,6 +424,9 @@ function clamp(value, min, max) {
 }
 
 function zoomTile(index, delta) {
+  if (state.autoFillTemplate) {
+    return;
+  }
   const item = state.items[index];
   if (!item) {
     return;
@@ -683,7 +715,7 @@ function render() {
     img.draggable = false;
     img.loading = "lazy";
     img.decoding = "async";
-    setTileImageStyles(img, item);
+    setTileImageStyles(img, getEffectiveImageTransform(item));
     makeDraggable(img, item);
 
     const handle = document.createElement("button");
@@ -706,6 +738,8 @@ function render() {
     zoom.max = "2.4";
     zoom.step = "0.05";
     zoom.value = String(item.scale);
+    zoom.disabled = state.autoFillTemplate;
+    zoom.style.opacity = state.autoFillTemplate ? "0.35" : "1";
     zoom.setAttribute("aria-label", `Zoom photo ${index + 1}`);
     zoom.addEventListener(
       "pointerdown",
@@ -740,6 +774,9 @@ function makeDraggable(img, item) {
 
   const onMove = (ev) => {
     wasDragging = true;
+    if (state.autoFillTemplate) {
+      return;
+    }
     if (dragMode === "scale") {
       const delta = (startY - ev.clientY) * 0.005;
       item.scale = clamp(Number((dragStartScale + delta).toFixed(2)), 1, 2.4);
@@ -757,6 +794,11 @@ function makeDraggable(img, item) {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     if (wasDragging) {
+      if (state.snapToSlots && dragMode === "move" && !state.autoFillTemplate) {
+        item.x = snapValueToGrid(item.x);
+        item.y = snapValueToGrid(item.y);
+        setTileImageStyles(img, getEffectiveImageTransform(item));
+      }
       if (dragMode === "scale") {
         announce("Resized photo.");
       } else {
@@ -767,6 +809,9 @@ function makeDraggable(img, item) {
 
   img.addEventListener("pointerdown", (ev) => {
     ev.preventDefault();
+    if (state.autoFillTemplate) {
+      return;
+    }
     rememberForUndo();
     wasDragging = false;
     img.classList.add("dragging");
@@ -784,6 +829,9 @@ function makeDraggable(img, item) {
     "wheel",
     (ev) => {
       ev.preventDefault();
+      if (state.autoFillTemplate) {
+        return;
+      }
       if (!wheelSessionActive) {
         rememberForUndo();
         wheelSessionActive = true;
@@ -952,6 +1000,10 @@ function applyTemplate(templateName) {
   state.canvasPreset = "custom";
   state.canvasWidth = template.canvasWidth || state.canvasWidth;
   state.canvasHeight = template.canvasHeight || state.canvasHeight;
+  if (templateName.startsWith("sbs-")) {
+    state.autoFillTemplate = true;
+    state.snapToSlots = true;
+  }
   state.textZone = template.textZone
     ? {
       enabled: !!template.textZone.enabled,
@@ -1035,6 +1087,7 @@ async function exportImage() {
     for (let i = 0; i < state.items.length; i += 1) {
       const item = state.items[i];
       const img = loadedImages[i];
+      const transform = getEffectiveImageTransform(item);
       const row = Math.floor(i / state.columns);
       const col = i % state.columns;
       const x = layout.contentX + col * (cellW + state.gap);
@@ -1045,11 +1098,16 @@ async function exportImage() {
       ctx.rect(x, y, cellW, cellH);
       ctx.clip();
 
-      const drawW = cellW * item.scale;
-      const drawH = cellH * item.scale;
       const previewRect = nodes.canvas.getBoundingClientRect();
-      const offsetX = item.x * (width / Math.max(previewRect.width, 1));
-      const offsetY = item.y * (height / Math.max(previewRect.height, 1));
+      const offsetX = transform.x * (width / Math.max(previewRect.width, 1));
+      const offsetY = transform.y * (height / Math.max(previewRect.height, 1));
+
+      // Match preview behavior (`object-fit: cover`) so export keeps source aspect ratio.
+      const imgW = img.naturalWidth || img.width;
+      const imgH = img.naturalHeight || img.height;
+      const coverScale = Math.max(cellW / Math.max(imgW, 1), cellH / Math.max(imgH, 1));
+      const drawW = imgW * coverScale * transform.scale;
+      const drawH = imgH * coverScale * transform.scale;
       const drawX = x + (cellW - drawW) / 2 + offsetX;
       const drawY = y + (cellH - drawH) / 2 + offsetY;
 
@@ -1237,6 +1295,25 @@ nodes.previewZoom.addEventListener("input", () => {
 nodes.previewZoom.addEventListener("change", () => {
   rememberForUndo();
   state.previewZoom = clamp(Number(nodes.previewZoom.value), 50, 180);
+  render();
+});
+
+nodes.autoFill.addEventListener("change", () => {
+  rememberForUndo();
+  state.autoFillTemplate = nodes.autoFill.checked;
+  if (state.autoFillTemplate) {
+    state.snapToSlots = true;
+  }
+  markCustomTemplate();
+  syncControls();
+  render();
+});
+
+nodes.snapSlots.addEventListener("change", () => {
+  rememberForUndo();
+  state.snapToSlots = nodes.snapSlots.checked;
+  markCustomTemplate();
+  syncControls();
   render();
 });
 
